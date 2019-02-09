@@ -10,7 +10,9 @@
 
             let gameTab = $('<table />').css({'border-spacing':'0px','margin':'auto','margin-top':'40px'});
 
-            let player,lastMovement,actualLevel;
+            let player,lastMovement,actualLevel,totalballs,placedballs;
+
+            let goal = $('#goal');
 
             $(monObj.levels).each((index)=>$('<button />').text("Level " + (index+1)).click(()=>{actualLevel = monObj.levels[index];showGameTab(actualLevel.cells);}).appendTo('body'));
 
@@ -55,6 +57,7 @@
                     gameTab.append(tr);
                 }
                 gameTab.appendTo('body');
+                goal.text('Boules placées: ' + $("td:contains('.$')").length + '/' + $("td:contains('.')").length);
             }
 
             function setPlayer(acase){
@@ -99,6 +102,8 @@
 
             $(document).on('keypress',function(e) {
                 player = $("td:contains('@')");
+                totalballs = $("td:contains('.')").length;
+                placedballs = $("td:contains('.$')").length;
                 switch (e.which) {
                     case 122: //Z
                         lastMovement = 'top';
@@ -116,12 +121,14 @@
                         break;
                 }
                 setPlayer(getCase(player));
-                if($("td:contains('.$')").length === $("td:contains('.')").length)alert('gg');
+                goal.text('Boules placées: ' + placedballs + '/' + totalballs);
+                if(placedballs === totalballs)alert('gg');
             });
         });
     </script>
 </head>
 <body>
 <h2>z,q,s,d pour se déplacer</h2>
+<h3 id="goal"></h3>
 </body>
 </html>
