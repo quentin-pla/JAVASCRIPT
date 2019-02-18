@@ -10,11 +10,17 @@
 
             let gameTab = $('<table />').css({'border-spacing':'0px','margin':'auto','margin-top':'40px'});
 
-            let player,lastMovement,actualLevel,totalballs,placedballs;
+            let player,lastMovement,actualLevel,totalballs,placedballs,balldrops,allowedtoplay;
+
+            let playButton,playerButton;
+
+            let selectedBlock = '#';
 
             let goal = $('#goal');
 
             $(monObj.levels).each((index)=>$('<button />').text("Level " + (index+1)).click(()=>{actualLevel = monObj.levels[index];showGameTab(actualLevel.cells);}).appendTo('body'));
+
+            $('<button />').text("Level builder").click(()=>showLevelBuilder()).appendTo('body');
 
             showGameTab(monObj.levels[0].cells);
 
@@ -42,8 +48,59 @@
                 if(acase.html() === '.$') acase.css('background-color','lightgreen');
             }
 
+            function showLevelBuilder() {
+                $('tr').remove();
+                $('.levelbuilderbutton').remove();
+                for(let i = 0; i < 20; i++) {
+                    let tr = $('<tr/>');
+                    for(let j = 0; j < 30; j++) {
+                        let td = $('<td/>');
+                        td.text((i===0 || i===19 || j===0 || j===29)?' ':' ');
+                        initCase(td);
+                        td.css({'height':'30px','width':'30px','padding':'0','white-space':'pre','color':'rgba(0,0,0,0)','user-select':'none','cursor':'pointer'});
+                        td.click(()=>{td.text((td.html() === ' ')?selectedBlock:' ');initCase(td)});
+                        tr.append(td);
+                    }
+                    gameTab.append(tr);
+                }
+                gameTab.click(()=>checkLevel());
+                gameTab.css({'margin-bottom':'20px','background-color':'grey','padding':'2px'}).appendTo('body');
+                $('<button />').addClass('levelbuilderbutton').text("Mur").click(()=>selectedBlock = '#').css({'background-color':'black','color':'white'}).appendTo('body');
+                $('<button />').addClass('levelbuilderbutton').text("Boule").click(()=>selectedBlock = '$').css({'background-color':'red','color':'white'}).appendTo('body');
+                $('<button />').addClass('levelbuilderbutton').text("Place").click(()=>selectedBlock = '.').css({'background-color':'blue','color':'white'}).appendTo('body');
+                $('<button />').addClass('levelbuilderbutton').text("Boule placée").click(()=>selectedBlock = '*').css({'background-color':'lightgreen','color':'white'}).appendTo('body');
+                playerButton = $('<button />').addClass('levelbuilderbutton').text("Joueur").click(()=>selectedBlock = ' @').css({'background-color':'green','color':'white'}).appendTo('body');
+                $('<button />').addClass('levelbuilderbutton').text("Effacer").click(()=>{$('td').text(' ').css('background-color','white').attr('id','');checkLevel()}).appendTo('body');
+                allowedtoplay = false;
+                goal.text('Boules placées: ' + 0 + '/' + 0);
+            }
+
+            function checkLevel(){
+                updateVariables();
+                if (player.length >= 1) {
+                    playerButton.hide();
+                    if(selectedBlock === ' @')selectedBlock = '#';
+                    if(totalballs === balldrops && totalballs > 0 && balldrops > 0) {
+                        if(playButton == null){
+                            playButton = $('<button />').addClass('levelbuilderbutton').text("Jouer").click(() => {
+                                allowedtoplay = true;
+                                playButton.remove();
+                                playButton = null;
+                            }).appendTo('body');
+                        }
+                    }
+                    else {
+                        allowedtoplay = false;
+                        playButton.remove();
+                        playButton = null;
+                    }
+                }
+                else playerButton.show();
+            }
+
             function showGameTab(cle) {
                 $('tr').remove();
+                $('.levelbuilderbutton').remove();
                 for(let i = 0; i < cle.length; i++) {
                     let tr = $('<tr/>');
                     for(let j = 0; j < cle[i].length; j++) {
@@ -56,8 +113,17 @@
                     }
                     gameTab.append(tr);
                 }
-                gameTab.appendTo('body');
+                gameTab.css({'margin-bottom':'20px','background-color':'white','padding':'0px'}).appendTo('body');
                 goal.text('Boules placées: ' + $("td:contains('.$')").length + '/' + $("td:contains('.')").length);
+                allowedtoplay = true;
+            }
+
+            function updateVariables(){
+                player = $("td:contains('@')");
+                balldrops = $("td:contains('.')").length;
+                totalballs = $("td:contains('$')").length;
+                placedballs = $("td:contains('.$')").length;
+                goal.text('Boules placées: ' + placedballs + '/' + balldrops);
             }
 
             function setPlayer(acase){
@@ -67,7 +133,7 @@
                         if(getCase(acase).html() === ' '){
                             getCase(acase).text(getCase(acase).html().concat('$'));
                             initCase(getCase(acase));
-                            acase.text(' ');
+                            acase.text((acase.html() === '.$')?'.':' ');
                         }
                         else if(getCase(acase).html() === '.'){
                             getCase(acase).text(getCase(acase).html().concat('$'));
@@ -102,27 +168,27 @@
 
             $(document).on('keypress',function(e) {
                 player = $("td:contains('@')");
-                totalballs = $("td:contains('.')").length;
-                placedballs = $("td:contains('.$')").length;
-                switch (e.which) {
-                    case 122: //Z
-                        lastMovement = 'top';
-                        break;
-                    case 100: //D
-                        lastMovement = 'right';
-                        break;
-                    case 115: //S
-                        lastMovement = 'bottom';
-                        break;
-                    case 113: //Q
-                        lastMovement = 'left';
-                        break;
-                    default:
-                        break;
+                if(allowedtoplay){
+                    switch (e.which) {
+                        case 122: //Z
+                            lastMovement = 'top';
+                            break;
+                        case 100: //D
+                            lastMovement = 'right';
+                            break;
+                        case 115: //S
+                            lastMovement = 'bottom';
+                            break;
+                        case 113: //Q
+                            lastMovement = 'left';
+                            break;
+                        default:
+                            break;
+                    }
+                    setPlayer(getCase(player));
+                    updateVariables();
+                    if(placedballs === balldrops)alert('gg');
                 }
-                setPlayer(getCase(player));
-                goal.text('Boules placées: ' + placedballs + '/' + totalballs);
-                if(placedballs === totalballs)alert('gg');
             });
         });
     </script>
